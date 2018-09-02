@@ -190,7 +190,7 @@ namespace Umbraco.Core.Components
         /// <param name="factory">A function creating a server messenger.</param>
         public static void SetServerMessenger(this Composition composition, Func<IContainer, IServerMessenger> factory)
         {
-            composition.Container.RegisterSingleton(factory);
+            composition.Container.RegisterSingleton("ServerMessenger", factory);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace Umbraco.Core.Components
         /// <param name="registrar">A server messenger.</param>
         public static void SetServerMessenger(this Composition composition, IServerMessenger registrar)
         {
-            composition.Container.RegisterSingleton(_ => registrar);
+            composition.Container.RegisterSingleton("ServerMessenger", _ => registrar);
         }
 
         /// <summary>
