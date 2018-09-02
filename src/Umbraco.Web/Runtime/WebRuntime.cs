@@ -58,7 +58,9 @@ namespace Umbraco.Web.Runtime
             container.RegisterSingleton(_ => _webProfiler);
 
             // replace CoreRuntime's CacheHelper registration
-            container.RegisterSingleton(_ => new CacheHelper(
+            container.RegisterSingleton(
+                "WebCacheHelper",
+                _ => new CacheHelper(
                 // we need to have the dep clone runtime cache provider to ensure
                 // all entities are cached properly (cloned in and cloned out)
                 new DeepCloneRuntimeCacheProvider(new HttpRuntimeCacheProvider(HttpRuntime.Cache)),

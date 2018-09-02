@@ -199,7 +199,9 @@ namespace Umbraco.Core.Runtime
             // need the deep clone runtime cache profiver to ensure entities are cached properly, ie
             // are cloned in and cloned out - no request-based cache here since no web-based context,
             // will be overriden later or
-            container.RegisterSingleton(_ => new CacheHelper(
+            container.RegisterSingleton(
+                "CoreCacheHelper",
+                _ => new CacheHelper(
                 new DeepCloneRuntimeCacheProvider(new ObjectCacheRuntimeCacheProvider()),
                 new StaticCacheProvider(),
                 NullCacheProvider.Instance,
