@@ -7,6 +7,7 @@ using Castle.Core;
 using Castle.MicroKernel.Lifestyle;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers;
+using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Castle.Windsor.Diagnostics.Helpers;
 using Castle.Windsor.Installer;
@@ -40,7 +41,8 @@ namespace Our.Umbraco.Container.Castle
             container = new WindsorContainer();
             container.Register(Component.For<IContainer>().Instance(this));
             container.Register(Component.For<ILazyComponentLoader>().ImplementedBy<LazyOfTComponentLoader>());
-
+            container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
+            container.Kernel.Resolver.AddSubResolver(new CollectionResolver(container.Kernel));
         }
 
         public void Dispose()
