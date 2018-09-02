@@ -88,7 +88,7 @@ namespace Umbraco.Web.Runtime
             composition.Container.RegisterSingleton<IUmbracoContextAccessor, HybridUmbracoContextAccessor>();
 
             // register the 'current' umbraco context - transient - for eg controllers
-            composition.Container.Register(factory => factory.GetInstance<IUmbracoContextAccessor>().UmbracoContext);
+            composition.Container.Register(factory => factory.GetInstance<IUmbracoContextAccessor>().UmbracoContext, "TransientUmbracoContext");
 
             // register a per-request HttpContextBase object
             // is per-request so only one wrapper is created per request
@@ -99,7 +99,8 @@ namespace Umbraco.Web.Runtime
 
             // register a per-request UmbracoContext object
             // no real need to be per request but assuming it is faster
-            composition.Container.RegisterSingleton(factory => factory.GetInstance<IUmbracoContextAccessor>().UmbracoContext);
+            // fixme - this second registration really bugs me. re-purposing a (nameless) service? can't we force everything to use the accessor now?
+            composition.Container.RegisterSingleton("PerRequestUmbracoContext", factory => factory.GetInstance<IUmbracoContextAccessor>().UmbracoContext);
 
             // register the umbraco helper
             composition.Container.RegisterSingleton<UmbracoHelper>();
