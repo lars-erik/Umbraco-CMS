@@ -6,26 +6,42 @@ using NUnit.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Umbraco.Core.Cache;
+using Umbraco.Core.Composing;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Manifest;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.PropertyEditors.Validators;
+using Umbraco.Core.Services;
 
 namespace Umbraco.Tests.Manifest
 {
     [TestFixture]
     public class ManifestParserTests
     {
-
         private ManifestParser _parser;
 
         [SetUp]
         public void Setup()
         {
+            Current.Reset();
+            var container = Mock.Of<IContainer>();
+            Current.Container = container;
+
+            var serviceContext = new ServiceContext(
+                localizedTextService: Mock.Of<ILocalizedTextService>());
+
+            Mock.Get(container)
+                .Setup(x => x.GetInstance(It.IsAny<Type>()))
+                .Returns<Type>(x =>
+                {
+                    if (x == typeof(ServiceContext)) return serviceContext;
+                    throw new Exception("oops");
+                });
+
             var validators = new IManifestValueValidator[]
             {
-                new RequiredValidator(),
-                new RegexValidator()
+                new RequiredValidator(Mock.Of<ILocalizedTextService>()),
+                new RegexValidator(Mock.Of<ILocalizedTextService>(), null)
             };
             _parser = new ManifestParser(NullCacheProvider.Instance, new ManifestValueValidatorCollection(validators), Mock.Of<ILogger>());
         }
