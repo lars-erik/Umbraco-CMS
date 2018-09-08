@@ -44,7 +44,6 @@ namespace Our.Umbraco.Container.Castle
         public CastleContainer()
         {
             container = new WindsorContainer();
-            container.Register(Component.For<IContainer>().Instance(this));
             container.Register(Component.For<ILazyComponentLoader>().ImplementedBy<LazyOfTComponentLoader>());
             container.Kernel.Resolver.AddSubResolver(new CollectionResolver(container.Kernel));
         }
