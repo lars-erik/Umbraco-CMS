@@ -16,6 +16,7 @@ using Castle.Windsor;
 using Castle.Windsor.Diagnostics.Helpers;
 using Castle.Windsor.Installer;
 using Umbraco.Core.Composing;
+using Umbraco.Web.Mvc;
 using IDependencyResolver = System.Web.Mvc.IDependencyResolver;
 
 namespace Our.Umbraco.Container.Castle
@@ -191,7 +192,7 @@ namespace Our.Umbraco.Container.Castle
         // fixme - Figure out requirements
         public IContainer ConfigureForWeb()
         {
-            DependencyResolver.SetResolver(new WindsorDependencyResolver(container));
+            Register<IFilteredControllerFactory>(x => new WindsorControllerFactory(this), Lifetime.Singleton);
 
             return this;
         }
@@ -226,13 +227,18 @@ namespace Our.Umbraco.Container.Castle
     /// <summary>
     /// Possibly not needed at all?
     /// </summary>
-    public class WindsorControllerFactory : DefaultControllerFactory
+    public class WindsorControllerFactory : DefaultControllerFactory, IFilteredControllerFactory
     {
         private readonly IContainer container;
 
         public WindsorControllerFactory(IContainer container)
         {
             this.container = container;
+        }
+
+        public bool CanHandle(RequestContext request)
+        {
+            return true;
         }
 
         public override void ReleaseController(IController controller)
