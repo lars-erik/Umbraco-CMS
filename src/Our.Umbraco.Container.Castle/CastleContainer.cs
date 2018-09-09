@@ -190,6 +190,11 @@ namespace Our.Umbraco.Container.Castle
             }
         }
 
+        public void Release(object instance)
+        {
+            container.Kernel.ReleaseComponent(instance);
+        }
+
         public IDisposable BeginScope()
         {
             return container.BeginScope();
@@ -236,8 +241,8 @@ namespace Our.Umbraco.Container.Castle
 
             public void Initialize()
             {
-                container.GetInstance<FilteredControllerFactoryCollectionBuilder>()
-                    .Insert<WindsorControllerFactory>();
+                //container.GetInstance<FilteredControllerFactoryCollectionBuilder>()
+                //    .Insert<WindsorControllerFactory>();
             }
         }
 
