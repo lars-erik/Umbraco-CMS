@@ -93,6 +93,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DocTools", "DocTools", "{53
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Container.Castle", "Our.Umbraco.Container.Castle\Our.Umbraco.Container.Castle.csproj", "{D1F4A1B5-75E0-42E1-8B3C-68DE0BAC7018}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Container.Castle.Tests", "Our.Umbraco.Container.Castle.Tests\Our.Umbraco.Container.Castle.Tests.csproj", "{BFF6297C-32C9-4020-9F6D-8B63D0344CFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,10 @@ Global
 		{D1F4A1B5-75E0-42E1-8B3C-68DE0BAC7018}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1F4A1B5-75E0-42E1-8B3C-68DE0BAC7018}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1F4A1B5-75E0-42E1-8B3C-68DE0BAC7018}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFF6297C-32C9-4020-9F6D-8B63D0344CFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFF6297C-32C9-4020-9F6D-8B63D0344CFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFF6297C-32C9-4020-9F6D-8B63D0344CFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFF6297C-32C9-4020-9F6D-8B63D0344CFE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
