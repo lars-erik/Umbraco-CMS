@@ -15,6 +15,7 @@ using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Castle.Windsor.Diagnostics.Helpers;
 using Castle.Windsor.Installer;
+using Umbraco.Core.Components;
 using Umbraco.Core.Composing;
 using Umbraco.Web.Mvc;
 using IDependencyResolver = System.Web.Mvc.IDependencyResolver;
@@ -84,7 +85,7 @@ namespace Our.Umbraco.Container.Castle
         public IEnumerable<Registration> GetRegistered(Type serviceType)
         {
             return container.Kernel.GetAssignableHandlers(serviceType)
-                .Select(x => new Registration(serviceType, x.GetComponentName())
+                .Select(x => new Registration(serviceType, x.ComponentModel.Name)
             );
         }
 
@@ -192,7 +193,8 @@ namespace Our.Umbraco.Container.Castle
         // fixme - Figure out requirements
         public IContainer ConfigureForWeb()
         {
-            Register<IFilteredControllerFactory>(x => new WindsorControllerFactory(this), Lifetime.Singleton);
+
+            //Register<IFilteredControllerFactory>(x => new WindsorControllerFactory(this), Lifetime.Singleton);
 
             return this;
         }
@@ -204,9 +206,44 @@ namespace Our.Umbraco.Container.Castle
         }
     }
 
+    public class CastleWindsorComponent : IUmbracoUserComponent
+    {
+        public void Compose(Composition composition)
+        {
+            
+        }
+
+        public Type InitializerType => typeof(CastleInitializer);
+
+        public class CastleInitializer : IComponentInitializer
+        {
+            private readonly IContainer container;
+
+            public CastleInitializer(IContainer container)
+            {
+                this.container = container;
+            }
+
+            public void Initialize()
+            {
+                container.GetInstance<FilteredControllerFactoryCollectionBuilder>()
+                    .Insert<WindsorControllerFactory>();
+            }
+        }
+
+        public void Terminate()
+        {
+        }
+    }
+
     public class WindsorDependencyResolver : IDependencyResolver
     {
         private readonly WindsorContainer container;
+
+        public WindsorDependencyResolver()
+        {
+            container = (WindsorContainer)((CastleContainer)Current.Container).ConcreteContainer;
+        }
 
         public WindsorDependencyResolver(WindsorContainer container)
         {
@@ -256,3 +293,4 @@ namespace Our.Umbraco.Container.Castle
         }
     }
 }
+
