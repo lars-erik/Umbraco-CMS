@@ -1,9 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Http;
+using System.Web.Http.Controllers;
+using System.Web.Http.Dependencies;
+using System.Web.Http.Dispatcher;
 using System.Web.Mvc;
 using System.Web.Routing;
 using Castle.Core;
@@ -193,8 +198,13 @@ namespace Our.Umbraco.Container.Castle
         // fixme - Figure out requirements
         public IContainer ConfigureForWeb()
         {
-
             //Register<IFilteredControllerFactory>(x => new WindsorControllerFactory(this), Lifetime.Singleton);
+
+            //GlobalConfiguration.Configuration.DependencyResolver = new WindsorWebApiDependencyResolver(container);
+
+            GlobalConfiguration.Configuration.Services.Replace(
+                typeof(IHttpControllerActivator),
+                new WindsorCompositionRoot(this.container));
 
             return this;
         }
@@ -236,14 +246,109 @@ namespace Our.Umbraco.Container.Castle
         }
     }
 
+    public class WindsorCompositionRoot : IHttpControllerActivator
+    {
+        private readonly IWindsorContainer container;
+
+        public WindsorCompositionRoot(IWindsorContainer container)
+        {
+            this.container = container;
+        }
+
+        public IHttpController Create(
+            HttpRequestMessage request,
+            HttpControllerDescriptor controllerDescriptor,
+            Type controllerType)
+        {
+            var controller =
+                (IHttpController)this.container.Resolve(controllerType);
+
+            request.RegisterForDispose(
+                new Release(
+                    () => this.container.Release(controller)));
+
+            return controller;
+        }
+
+        private class Release : IDisposable
+        {
+            private readonly Action release;
+
+            public Release(Action release)
+            {
+                this.release = release;
+            }
+
+            public void Dispose()
+            {
+                this.release();
+            }
+        }
+    }
+
+    public class WindsorWebApiDependencyResolver : System.Web.Http.Dependencies.IDependencyResolver
+    {
+        private readonly IWindsorContainer container;
+
+        public WindsorWebApiDependencyResolver(IWindsorContainer container)
+        {
+            this.container = container;
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public object GetService(Type serviceType)
+        {
+            return container.Resolve(serviceType);
+        }
+
+        public IEnumerable<object> GetServices(Type serviceType)
+        {
+            return container.ResolveAll(serviceType).Cast<object>();
+        }
+
+        public IDependencyScope BeginScope()
+        {
+            return new WindsorDependencyScope(container);
+        }
+    }
+
+    internal sealed class WindsorDependencyScope : IDependencyScope
+    {
+        private readonly IWindsorContainer _container;
+        private readonly IDisposable _scope;
+
+        public WindsorDependencyScope(IWindsorContainer container)
+        {
+            if (container == null)
+            {
+                throw new ArgumentNullException("container");
+            }
+            _container = container;
+            _scope = container.BeginScope();
+        }
+
+        public object GetService(Type t)
+        {
+            return _container.Kernel.HasComponent(t) ? _container.Resolve(t) : null;
+        }
+
+        public IEnumerable<object> GetServices(Type t)
+        {
+            return _container.ResolveAll(t).Cast<object>().ToArray();
+        }
+
+        public void Dispose()
+        {
+            _scope.Dispose();
+        }
+    }
+
     public class WindsorDependencyResolver : IDependencyResolver
     {
         private readonly WindsorContainer container;
-
-        public WindsorDependencyResolver()
-        {
-            container = (WindsorContainer)((CastleContainer)Current.Container).ConcreteContainer;
-        }
 
         public WindsorDependencyResolver(WindsorContainer container)
         {
