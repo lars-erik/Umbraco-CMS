@@ -90,8 +90,15 @@ namespace Our.Umbraco.Container.Castle
         public IEnumerable<Registration> GetRegistered(Type serviceType)
         {
             return container.Kernel.GetAssignableHandlers(serviceType)
-                .Select(x => new Registration(serviceType, x.ComponentModel.Name)
+                .Select(x => new Registration(serviceType, x.ComponentModel.Name, x.ComponentModel.Implementation)
             );
+        }
+
+        public IEnumerable<Registration> GetRegistered()
+        {
+            return container.Kernel.GetAssignableHandlers(typeof(object))
+                .Select(x => new Registration(x.ComponentModel.Services.First(), x.ComponentModel.Name, x.ComponentModel.Implementation));
+
         }
 
         // fixme - Refactor to use Dictionary. Castle does not support nameless parameters. !?!?
