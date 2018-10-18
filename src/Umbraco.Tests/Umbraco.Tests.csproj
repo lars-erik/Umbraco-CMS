@@ -523,6 +523,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Our.Umbraco.Container.Castle\Our.Umbraco.Container.Castle.csproj">
+      <Project>{d1f4a1b5-75e0-42e1-8b3c-68de0bac7018}</Project>
+      <Name>Our.Umbraco.Container.Castle</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Umbraco.Core\Umbraco.Core.csproj">
       <Project>{31785BC3-256C-4613-B2F5-A1B0BDDED8C1}</Project>
       <Name>Umbraco.Core</Name>
