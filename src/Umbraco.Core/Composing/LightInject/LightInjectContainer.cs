@@ -125,7 +125,31 @@ namespace Umbraco.Core.Composing.LightInject
 
         /// <inheritdoc />
         public IEnumerable<Registration> GetRegistered(Type type)
-            => Container.AvailableServices.Where(x => x.ServiceType == type).Select(x => new Registration(x.ServiceType, x.ServiceName));
+            => Container.AvailableServices.Where(x => x.ServiceType == type).Select(x => new Registration(x.ServiceType, x.ServiceName, x.ImplementingType));
+
+        public IEnumerable<Registration> GetRegistered()
+            => Container.AvailableServices.Select(x => new Registration(x.ServiceType, x.ServiceName, x.ImplementingType)
+            {
+                Lifetime = ReverseLifetime(x),
+                Dependencies = x.ImplementingType?.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+                    .Select(y => y.GetParameters().Select(z => z.ParameterType))
+                    .OrderByDescending(y => y.Count())
+                    .FirstOrDefault()
+                    ?.ToArray()
+            });
+
+        private static Lifetime ReverseLifetime(ServiceRegistration x)
+        {
+            var reverse = new Dictionary<Type, Lifetime>
+            {
+                { typeof(PerRequestLifeTime), Lifetime.Request },
+                { typeof(PerContainerLifetime), Lifetime.Singleton },
+                { typeof(PerScopeLifetime), Lifetime.Scope },
+            };
+            if (x.Lifetime != null)
+                return reverse[x.Lifetime.GetType()];
+            return Lifetime.Transient;
+        }
 
         /// <inheritdoc />
         public object CreateInstance(Type type, IDictionary<string, object> args)

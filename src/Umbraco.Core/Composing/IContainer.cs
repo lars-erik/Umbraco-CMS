@@ -66,6 +66,8 @@ namespace Umbraco.Core.Composing
         /// <returns>The registrations for the service.</returns>
         IEnumerable<Registration> GetRegistered(Type serviceType);
 
+        IEnumerable<Registration> GetRegistered();
+
         /// <summary>
         /// Creates an instance with arguments.
         /// </summary>

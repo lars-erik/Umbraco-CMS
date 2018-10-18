@@ -12,10 +12,12 @@ namespace Umbraco.Core.Composing
         /// </summary>
         /// <param name="serviceType"></param>
         /// <param name="serviceName"></param>
-        public Registration(Type serviceType, string serviceName)
+        /// <param name="implementingType"></param>
+        public Registration(Type serviceType, string serviceName, Type implementingType)
         {
             ServiceType = serviceType;
             ServiceName = serviceName;
+            ImplementingType = implementingType;
         }
 
         /// <summary>
@@ -27,5 +29,14 @@ namespace Umbraco.Core.Composing
         /// Gets the service name.
         /// </summary>
         public string ServiceName { get; }
+
+        public Lifetime Lifetime { get; set; }
+
+        /// <summary>
+        /// Gets the concrete type implementing the service.
+        /// </summary>
+        public Type ImplementingType { get; }
+
+        public Type[] Dependencies { get; set; }
     }
 }
