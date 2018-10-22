@@ -24,6 +24,7 @@ using Umbraco.Core.Components;
 using Umbraco.Core.Composing;
 using Umbraco.Web.Mvc;
 using IDependencyResolver = System.Web.Mvc.IDependencyResolver;
+using IHttpController = System.Web.Http.Controllers.IHttpController;
 
 namespace Our.Umbraco.Container.Castle
 {
@@ -86,19 +87,32 @@ namespace Our.Umbraco.Container.Castle
             return container.ResolveAll<TService>();
         }
 
-        // fixme - Translate to Registration object
+        Dictionary<LifestyleType, Lifetime> reverseLifetimes = new Dictionary<LifestyleType, Lifetime>
+        {
+            {LifestyleType.Singleton, Lifetime.Singleton},
+            {LifestyleType.PerWebRequest, Lifetime.Request},
+            {LifestyleType.Scoped, Lifetime.Scope},
+            {LifestyleType.Transient, Lifetime.Transient}
+        };
+
         public IEnumerable<Registration> GetRegistered(Type serviceType)
         {
-            return container.Kernel.GetAssignableHandlers(serviceType)
-                .Select(x => new Registration(serviceType, x.ComponentModel.Name, x.ComponentModel.Implementation)
-            );
+            return container.Kernel.GetAssignableHandlers(serviceType).Select(MapRegistration);
         }
 
         public IEnumerable<Registration> GetRegistered()
         {
-            return container.Kernel.GetAssignableHandlers(typeof(object))
-                .Select(x => new Registration(x.ComponentModel.Services.First(), x.ComponentModel.Name, x.ComponentModel.Implementation));
+            return container.Kernel.GetAssignableHandlers(typeof(object)).Select(MapRegistration);
 
+        }
+
+        private Registration MapRegistration(IHandler x)
+        {
+            return new Registration(x.ComponentModel.Services.First(), x.ComponentModel.Name, x.ComponentModel.Implementation)
+            {
+                Lifetime = reverseLifetimes.ContainsKey(x.ComponentModel.LifestyleType) ? reverseLifetimes[x.ComponentModel.LifestyleType] : Lifetime.Transient,
+                Dependencies = x.ComponentModel.Dependencies.Select(y => y.TargetType).ToArray()
+            };
         }
 
         // fixme - Refactor to use Dictionary. Castle does not support nameless parameters. !?!?
@@ -233,7 +247,7 @@ namespace Our.Umbraco.Container.Castle
     {
         public void Compose(Composition composition)
         {
-            
+            composition.Container.Register<ShowRegistrationsController>();
         }
 
         public Type InitializerType => typeof(CastleInitializer);
@@ -249,8 +263,6 @@ namespace Our.Umbraco.Container.Castle
 
             public void Initialize()
             {
-                //container.GetInstance<FilteredControllerFactoryCollectionBuilder>()
-                //    .Insert<WindsorControllerFactory>();
             }
         }
 

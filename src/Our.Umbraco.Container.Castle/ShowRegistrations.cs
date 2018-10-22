@@ -20,6 +20,14 @@ namespace Our.Umbraco.Container.Castle
 {
     public class ShowRegistrationsController : UmbracoAuthorizedApiController
     {
+        private Dictionary<Lifetime, int> lifetimeValues = new Dictionary<Lifetime, int>
+        {
+            { Lifetime.Singleton, 0 },
+            { Lifetime.Scope, 1 },
+            { Lifetime.Request, 2 },
+            { Lifetime.Transient, 3 }
+        };
+
         private readonly IContainer container;
 
         public ShowRegistrationsController()
@@ -40,15 +48,11 @@ namespace Our.Umbraco.Container.Castle
             {
                 Content = new StringContent(
                     "<table>" +
+                    "<tr><th>Service type</th><th>Implementing type</th><th>Lifetime</th><th>Service name</th></tr>" +
                     container
                         .GetRegistered()
-                        .OrderBy(x =>
-                            x.Lifetime == Lifetime.Singleton ? 0 :
-                            x.Lifetime == Lifetime.Scope ? 1 :
-                            x.Lifetime == Lifetime.Request ? 2 :
-                            3
-                        )
-                        .ThenByDescending(x => x.Dependencies?.Length)
+                        .OrderBy(x => lifetimeValues[x.Lifetime])
+                        .ThenBy(x => x.Dependencies?.Length)
                         .Aggregate("", (s, x) => s +
                                                  "<tr><td>" +
                                                  x.ServiceType +
@@ -59,15 +63,49 @@ namespace Our.Umbraco.Container.Castle
                                                  "</td><td>" +
                                                  x.ServiceName +
                                                  "</td></tr>" +
-                                                 "<tr><td colspan=\"4\"><pre>" +
-                                                 String.Join(", ", x.Dependencies?.Select(y => y.Name) ?? new string[0]) +
-                                                 "</pre></td></tr>"
+                                                 "<tr><td colspan=\"4\">" +
+                                                 DependencyTable(x) +
+                                                 "</td></tr>"
                                                  ) +
                      "</table>"
                     , Encoding.UTF8
                     , "text/html"
                 )
             };
+        }
+
+        private string DependencyTable(Registration registration)
+        {
+            if (!registration.Dependencies.Any())
+            {
+                return "";
+            }
+
+            return "<table style=\"margin-left: 50px\">" +
+                   "<tr><th>Service</th><th>First impl. lifecycle</th><th>First impl. type</th></tr>" +
+                   registration.Dependencies.Aggregate("", (s, t) =>
+                   {
+                       var dependency = container.GetRegistered(t).FirstOrDefault()
+                           ?? new Registration(t, "Not registered", null) { Lifetime = Lifetime.Transient, Dependencies = new Type[0] };
+
+                       string bg = "transparent";
+                       if (lifetimeValues[dependency.Lifetime] > lifetimeValues[registration.Lifetime])
+                       {
+                           bg = "orange";
+                       }
+
+                       return s +
+                              "<tr style=\"background-color: " +
+                              bg +
+                              "\"><td>" +
+                              t.Name +
+                              "</td><td>" +
+                              dependency.Lifetime +
+                              "</td><td>" +
+                              dependency.ImplementingType +
+                              "</td></tr>";
+                   }) +
+                   "</table>";
         }
     }
 }
