@@ -144,6 +144,7 @@ namespace Our.Umbraco.Container.Castle
             container.Register(
                 Component
                     .For(typeof(TService))
+                    .Named(typeof(TService).Name + "-impl-" + Guid.NewGuid().ToString("N"))
                     .UsingFactory<IContainer, TService>(f => factory(this))
                     .LifeStyle.Is(lifetimes[lifetime])
                     .IsDefault()
