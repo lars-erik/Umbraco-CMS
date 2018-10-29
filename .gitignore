@@ -156,3 +156,4 @@ build/temp/
 
 
 # eof
+/build/Modules/Umbraco.Build/temp
