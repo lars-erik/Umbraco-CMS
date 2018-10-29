@@ -1,0 +1,11 @@
+﻿@model IPublishedProperty
+
+@{
+    var items = (string[]) Model.GetValue();
+}
+<ul>
+    @foreach (var item in items)
+    {
+        <li>@item</li>
+    }
+</ul>

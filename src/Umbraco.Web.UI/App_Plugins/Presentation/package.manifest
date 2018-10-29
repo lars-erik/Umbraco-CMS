@@ -1,0 +1,11 @@
+﻿{
+    "propertyEditors": [
+        {
+            "name": "Presentation textbox",
+            "alias": "presentation.textbox",
+            "editor": {
+                "view": "textbox"
+            }
+        }
+    ]
+}

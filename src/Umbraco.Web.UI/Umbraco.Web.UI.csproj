@@ -138,6 +138,10 @@
       <DependentUpon>noNodes.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="Presentation\PresentationComponent.cs" />
+    <Compile Include="Presentation\PropertyValueConverters\PresentationTextValueConverter.cs" />
+    <Compile Include="Presentation\RenderMvcControllers\PageController.cs" />
+    <Compile Include="Presentation\SurfaceControllers\ToggleMeAroundSurfaceController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -239,6 +243,7 @@
     <Content Include="Umbraco\Dashboard\UserControlProxy.aspx" />
     <Content Include="Umbraco\Install\Views\Web.config" />
     <Content Include="App_Plugins\ModelsBuilder\package.manifest" />
+    <Content Include="App_Plugins\Presentation\package.manifest" />
     <None Include="Config\404handlers.Release.config">
       <DependentUpon>404handlers.config</DependentUpon>
     </None>
@@ -412,6 +417,7 @@
     <Content Include="Umbraco\Views\Preview\Index.cshtml" />
     <Content Include="Umbraco\Views\web.config" />
     <Content Include="Views\Page.cshtml" />
+    <Content Include="Views\ToggleMeAroundSurface\AsList.cshtml" />
     <None Include="Web.Debug.config.transformed" />
     <None Include="web.Template.Debug.config">
       <DependentUpon>Web.Template.config</DependentUpon>
