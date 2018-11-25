@@ -37,7 +37,7 @@ namespace Umbraco.Tests.Routing
             _module = new UmbracoInjectedModule
             (
                 globalSettings,
-                Mock.Of<IUmbracoContextAccessor>(),
+                new Lazy<IUmbracoContextAccessor>(() => Mock.Of<IUmbracoContextAccessor>()),
                 Container.GetInstance<IPublishedSnapshotService>(),
                 Container.GetInstance<IUserService>(),
                 new UrlProviderCollection(new IUrlProvider[0]),

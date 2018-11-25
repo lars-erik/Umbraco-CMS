@@ -243,9 +243,9 @@ namespace Umbraco.Core.Runtime
             container.RegisterSingleton(f => new TypeLoader(f.GetInstance<IRuntimeCacheProvider>(), f.GetInstance<IGlobalSettings>(), f.GetInstance<ProfilingLogger>()));
 
             // register syntax providers - required by database factory - GetAllInstances<ISqlSyntaxProvider> or an IEnumerable can get them
-            container.Register<MySqlSyntaxProvider>();
-            container.Register<SqlCeSyntaxProvider>();
-            container.Register<SqlServerSyntaxProvider>();
+            container.Register<ISqlSyntaxProvider, MySqlSyntaxProvider>();
+            container.Register<ISqlSyntaxProvider, SqlCeSyntaxProvider>();
+            container.Register<ISqlSyntaxProvider, SqlServerSyntaxProvider>();
 
             // register persistence mappers - required by database factory so needs to be done here
             // means the only place the collection can be modified is in a runtime - afterwards it

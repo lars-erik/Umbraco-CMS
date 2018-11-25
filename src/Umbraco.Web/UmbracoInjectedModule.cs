@@ -39,7 +39,7 @@ namespace Umbraco.Web
     public class UmbracoInjectedModule : IHttpModule
     {
         private readonly IGlobalSettings _globalSettings;
-        private readonly IUmbracoContextAccessor _umbracoContextAccessor;
+        private readonly Lazy<IUmbracoContextAccessor> _umbracoContextAccessor;
         private readonly IPublishedSnapshotService _publishedSnapshotService;
         private readonly IUserService _userService;
         private readonly UrlProviderCollection _urlProviders;
@@ -50,7 +50,7 @@ namespace Umbraco.Web
 
         public UmbracoInjectedModule(
             IGlobalSettings globalSettings,
-            IUmbracoContextAccessor umbracoContextAccessor,
+            Lazy<IUmbracoContextAccessor> umbracoContextAccessor,
             IPublishedSnapshotService publishedSnapshotService,
             IUserService userService,
             UrlProviderCollection urlProviders,
@@ -95,7 +95,7 @@ namespace Umbraco.Web
             // create the UmbracoContext singleton, one per request, and assign
             // replace existing if any (eg during app startup, a temp one is created)
             UmbracoContext.EnsureContext(
-                _umbracoContextAccessor,
+                _umbracoContextAccessor?.Value,
                 httpContext,
                 _publishedSnapshotService,
                 new WebSecurity(httpContext, _userService, _globalSettings),
