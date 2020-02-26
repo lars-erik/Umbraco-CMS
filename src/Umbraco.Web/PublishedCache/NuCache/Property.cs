@@ -124,7 +124,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
         private CacheValues GetCacheValues(PropertyCacheLevel cacheLevel)
         {
             CacheValues cacheValues;
-            PublishedSnapshot publishedSnapshot;
+            IPublishedSnapshot publishedSnapshot;
             IAppCache cache;
             switch (cacheLevel)
             {
@@ -151,7 +151,7 @@ namespace Umbraco.Web.PublishedCache.NuCache
                     break;
                 case PropertyCacheLevel.Snapshot:
                     // cache within the snapshot cache
-                    publishedSnapshot = (PublishedSnapshot) _publishedSnapshotAccessor.PublishedSnapshot;
+                    publishedSnapshot = _publishedSnapshotAccessor.PublishedSnapshot;
                     cache = publishedSnapshot?.SnapshotCache;
                     cacheValues = GetCacheValues(cache);
                     break;
