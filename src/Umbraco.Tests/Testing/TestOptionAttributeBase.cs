@@ -43,6 +43,12 @@ namespace Umbraco.Tests.Testing
                                              $"To use base classes from Umbraco.Tests, add your test assembly to TestOptionAttributeBase.ScanAssemblies");
                 }
             }
+
+            if (methodName == null)
+            {
+                return GetFixtureOptions<TOptions>(type);
+            }
+
             var methodInfo = type.GetMethod(methodName); // what about overloads?
             var options = GetTestOptions<TOptions>(methodInfo);
             return options;
