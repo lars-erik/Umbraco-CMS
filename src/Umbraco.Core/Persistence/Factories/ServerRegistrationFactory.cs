@@ -20,7 +20,7 @@ namespace Umbraco.Core.Persistence.Factories
                 ServerAddress = entity.ServerAddress,
                 DateRegistered = entity.CreateDate,
                 IsActive = entity.IsActive,
-                IsMaster = ((ServerRegistration) entity).IsMaster,
+                IsMaster = ((ServerRegistration) entity).IsPrimary,
                 DateAccessed = entity.UpdateDate,
                 ServerIdentity = entity.ServerIdentity
             };

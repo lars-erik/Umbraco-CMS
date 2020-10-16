@@ -12,7 +12,7 @@ namespace Umbraco.Core.Models
         private string _serverAddress;
         private string _serverIdentity;
         private bool _isActive;
-        private bool _isMaster;
+        private bool isPrimary;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServerRegistration"/> class.
@@ -29,8 +29,8 @@ namespace Umbraco.Core.Models
         /// <param name="registered">The date and time the registration was created.</param>
         /// <param name="accessed">The date and time the registration was last accessed.</param>
         /// <param name="isActive">A value indicating whether the registration is active.</param>
-        /// <param name="isMaster">A value indicating whether the registration is master.</param>
-        public ServerRegistration(int id, string serverAddress, string serverIdentity, DateTime registered, DateTime accessed, bool isActive, bool isMaster)
+        /// <param name="isPrimary">A value indicating whether the registration is primary server.</param>
+        public ServerRegistration(int id, string serverAddress, string serverIdentity, DateTime registered, DateTime accessed, bool isActive, bool isPrimary)
         {
             UpdateDate = accessed;
             CreateDate = registered;
@@ -39,7 +39,7 @@ namespace Umbraco.Core.Models
             ServerAddress = serverAddress;
             ServerIdentity = serverIdentity;
             IsActive = isActive;
-            IsMaster = isMaster;
+            IsPrimary = isPrimary;
         }
 
         /// <summary>
@@ -87,10 +87,10 @@ namespace Umbraco.Core.Models
         /// <summary>
         /// Gets or sets a value indicating whether the server is master.
         /// </summary>
-        public bool IsMaster
+        public bool IsPrimary
         {
-            get => _isMaster;
-            set => SetPropertyValueAndDetectChanges(value, ref _isMaster, nameof(IsMaster));
+            get => isPrimary;
+            set => SetPropertyValueAndDetectChanges(value, ref isPrimary, nameof(IsPrimary));
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Umbraco.Core.Models
         /// <returns></returns>
         public override string ToString()
         {
-            return string.Format("{{\"{0}\", \"{1}\", {2}active, {3}master}}", ServerAddress, ServerIdentity, IsActive ? "" : "!", IsMaster ? "" : "!");
+            return string.Format("{{\"{0}\", \"{1}\", {2}active, {3}master}}", ServerAddress, ServerIdentity, IsActive ? "" : "!", IsPrimary ? "" : "!");
         }
     }
 }

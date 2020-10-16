@@ -52,7 +52,7 @@ namespace Umbraco.Core.Services.Implement
                 ((ServerRegistrationRepository) _serverRegistrationRepository).ClearCache(); // ensure we have up-to-date cache
 
                 var regs = _serverRegistrationRepository.GetMany().ToArray();
-                var hasMaster = regs.Any(x => ((ServerRegistration) x).IsMaster);
+                var hasMaster = regs.Any(x => ((ServerRegistration) x).IsPrimary);
                 var server = regs.FirstOrDefault(x => x.ServerIdentity.InvariantEquals(serverIdentity));
 
                 if (server == null)
@@ -67,7 +67,7 @@ namespace Umbraco.Core.Services.Implement
 
                 server.IsActive = true;
                 if (hasMaster == false)
-                    server.IsMaster = true;
+                    server.IsPrimary = true;
 
                 _serverRegistrationRepository.Save(server);
                 _serverRegistrationRepository.DeactiveStaleServers(staleTimeout); // triggers a cache reload
@@ -83,7 +83,7 @@ namespace Umbraco.Core.Services.Implement
                 // than one active server, then role is master or replica
 #warning If peeps depend on ServerRole being master after this, then we're in trouble.
                 _currentServerRole = regs.Count(x => x.IsActive) > 1
-                    ? (server.IsMaster ? ServerRole.Primary : ServerRole.Replica)
+                    ? (server.IsPrimary ? ServerRole.Primary : ServerRole.Replica)
                     : ServerRole.Single;
 
                 scope.Complete();
@@ -106,7 +106,7 @@ namespace Umbraco.Core.Services.Implement
 
                 var server = _serverRegistrationRepository.GetMany().FirstOrDefault(x => x.ServerIdentity.InvariantEquals(serverIdentity));
                 if (server == null) return;
-                server.IsActive = server.IsMaster = false;
+                server.IsActive = server.IsPrimary = false;
                 _serverRegistrationRepository.Save(server); // will trigger a cache reload // will trigger a cache reload
 
                 scope.Complete();
