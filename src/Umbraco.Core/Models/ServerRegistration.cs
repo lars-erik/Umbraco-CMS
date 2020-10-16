@@ -84,12 +84,20 @@ namespace Umbraco.Core.Models
             set => SetPropertyValueAndDetectChanges(value, ref _isActive, nameof(IsActive));
         }
 
+        [Obsolete("Replaced with IsPrimary. Will be deleted in a future version.")]
+        public bool IsMaster
+        {
+            get => IsPrimary;
+            set => IsPrimary = value;
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether the server is master.
         /// </summary>
         public bool IsPrimary
         {
             get => isPrimary;
+#warning: This is a breaking change if somebody watches the change of "IsMaster".
             set => SetPropertyValueAndDetectChanges(value, ref isPrimary, nameof(IsPrimary));
         }
 

@@ -21,6 +21,12 @@ namespace Umbraco.Core.Models
         /// <summary>
         /// Gets or sets a value indicating whether the server is primary.
         /// </summary>
+        [Obsolete("Replaced with IsPrimary. Will be deleted in future versions.")]
+        bool IsMaster { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the server is primary.
+        /// </summary>
         bool IsPrimary { get; set; }
 
         /// <summary>
