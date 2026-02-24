@@ -15,22 +15,25 @@ public abstract class UmbracoIntegrationTest : UmbracoIntegrationFixtureBase
     {
         BuildAndStartHost();
     }
+    
+    // Should be removed in a major - only here to silence ValidatePackage.target. It used to be non-async, but should not be called by implementors - it was marked with [TearDown] and executed anyway. And NUnit supports async teardown (now).
+    public void TearDownAsync() {}
 
     [TearDown]
-    public async Task TearDownAsync()
+    public async Task TearDownActualAsync()
     {
         await StopHost();
     }
 
     [TearDown]
-    public void TearDown()
+    public override void TearDown()
     {
         ExecuteTearDownQueue();
     }
 
     [SetUp]
-    public virtual void SetUp_Logging() => TestContext.Out.Write($"Start test {TestCount++}: {TestContext.CurrentContext.Test.Name}");
+    public override void SetUp_Logging() => TestContext.Out.Write($"Start test {TestCount++}: {TestContext.CurrentContext.Test.Name}");
 
     [TearDown]
-    public void TearDown_Logging() => TestContext.Out.Write($"  {TestContext.CurrentContext.Result.Outcome.Status}");
+    public override void TearDown_Logging() => TestContext.Out.Write($"  {TestContext.CurrentContext.Result.Outcome.Status}");
 }

@@ -23,7 +23,9 @@ namespace Umbraco.Cms.Tests.Integration.Testing;
 public abstract class UmbracoIntegrationTestBase
 {
     private static readonly Lock _dbLocker = new();
+
     private static ITestDatabase? _dbInstance;
+
     private static TestDbMeta _fixtureDbMeta;
 
     // TODO (V18): Rename to s_testCount to follow naming conventions
@@ -32,6 +34,7 @@ public abstract class UmbracoIntegrationTestBase
     private readonly List<Action> _fixtureTeardown = new();
 
     protected readonly Queue<Action> TeardownQueue = new();
+
     protected bool IsFirstTestInFixture = true;
 
     protected Dictionary<string, string> InMemoryConfiguration { get; } = new();
@@ -45,6 +48,12 @@ public abstract class UmbracoIntegrationTestBase
     protected void AddOnTestTearDown(Action tearDown) => TeardownQueue.Enqueue(tearDown);
 
     protected void AddOnFixtureTearDown(Action tearDown) => _fixtureTeardown.Add(tearDown);
+
+    // The following empty virtuals should be removed in a major - only here to silence ValidatePackage.target.
+    // Should likely find more concrete names than TearDown().
+    public virtual void SetUp_Logging() {}
+    public virtual void TearDown_Logging() { }
+    public virtual void TearDown() {}
 
     /// <summary>
     /// Intended to be called from a test fixture [TearDown] or a setup fixture [OneTimeTearDown]
