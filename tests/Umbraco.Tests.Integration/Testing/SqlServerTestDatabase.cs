@@ -72,7 +72,10 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
             connection.Open();
             using (var command = connection.CreateCommand())
             {
-                SetCommand(command, $@"CREATE DATABASE {LocalDb.QuotedName(meta.Name)}");
+                SetCommand(command, $@"
+                    CREATE DATABASE {LocalDb.QuotedName(meta.Name)};
+                    ALTER DATABASE {LocalDb.QuotedName(meta.Name)} SET RECOVERY SIMPLE;
+                ");
                 command.ExecuteNonQuery();
             }
         }
@@ -127,7 +130,7 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
         cmd.CommandText = $@"
             BACKUP DATABASE {LocalDb.QuotedName(sourceMeta.Name)}
             TO DISK = N'{backupPath.Replace("'", "''")}'
-            WITH INIT, COMPRESSION";
+            WITH INIT"; // , COMPRESSION < not supported on express
         cmd.ExecuteNonQuery();
 
         _snapshotPaths[snapshotKey] = backupPath;
@@ -141,8 +144,8 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
             throw new InvalidOperationException($"No snapshot found with key '{snapshotKey}'.");
         }
 
-        var dbName = $"{DatabaseName}-Snap-{Interlocked.Increment(ref _snapshotCounter)}";
-        var meta = TestDatabaseInformation.CreateWithMasterConnectionString(dbName, false, _settings.SQLServerMasterConnectionString);
+        var meta = _readySchemaQueue.Take();
+        var dbName = meta.Name;
 
         _snapshotRestoredDatabases.Add(dbName);
 
