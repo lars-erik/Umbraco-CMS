@@ -134,17 +134,6 @@ public abstract class ContentEditingServiceSnapshotTestBase
         _coreScope.Notifications.ScopeExit(true);
     }
 
-    protected void RecycleScopes()
-    {
-        _serviceProvider = null;
-        _serviceScope.Dispose();
-        _coreScope.Dispose();
-
-        _coreScope = Fixture.SharedServices.GetRequiredService<ICoreScopeProvider>().CreateCoreScope(autoComplete: false, repositoryCacheMode: RepositoryCacheMode.Scoped);
-        _serviceScope = _outerProvider.CreateScope();
-        _serviceProvider = _serviceScope.ServiceProvider;
-    }
-
     private void PopulateSeededContent()
     {
         ContentType = (ContentType)ContentTypeService.Get("umbTextpage");
