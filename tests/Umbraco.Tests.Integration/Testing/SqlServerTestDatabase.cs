@@ -123,17 +123,43 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 
         using var connection = new SqlConnection(_settings.SQLServerMasterConnectionString);
         connection.Open();
+
+        // Get default data/log directories from the server
+        var (defaultDataPath, defaultLogPath) = GetDefaultPaths(connection);
+
+        // RESTORE DATABASE cannot use SQL parameters for identifiers or file paths.
+        var escapedBackupPath = backupPath.Replace("'", "''");
+        var dataFilePath = Path.Combine(defaultDataPath, $"{sourceMeta.Name}.mdf").Replace("'", "''");
+        var logFilePath = Path.Combine(defaultLogPath, $"{sourceMeta.Name}_log.ldf").Replace("'", "''");
+
+        var cloneDataFilePath = Path.Combine(_snapshotDir, $"{sourceMeta.Name}.mdf").Replace("'", "''");
+        var cloneLogFilePath = Path.Combine(_snapshotDir, $"{sourceMeta.Name}_log.ldf").Replace("'", "''");
+
         using var cmd = connection.CreateCommand();
 
         // BACKUP DATABASE cannot use SQL parameters for database name or file path.
         // Names are internally generated (not user input), matching existing DDL patterns.
+        //cmd.CommandText = $@"
+        //    BACKUP DATABASE {LocalDb.QuotedName(sourceMeta.Name)}
+        //    TO DISK = N'{backupPath.Replace("'", "''")}'
+        //    WITH INIT"; // , COMPRESSION < not supported on express
+
         cmd.CommandText = $@"
-            BACKUP DATABASE {LocalDb.QuotedName(sourceMeta.Name)}
-            TO DISK = N'{backupPath.Replace("'", "''")}'
-            WITH INIT"; // , COMPRESSION < not supported on express
+            ALTER DATABASE [{sourceMeta.Name}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+            exec sp_detach_db N'{sourceMeta.Name}', @skipchecks = TRUE
+        ";
         cmd.ExecuteNonQuery();
 
-        _snapshotPaths[snapshotKey] = backupPath;
+        File.Copy(dataFilePath, cloneDataFilePath, true);
+        File.Copy(logFilePath, cloneLogFilePath, true);
+
+        cmd.CommandText = $@"
+            exec sp_attach_db N'{sourceMeta.Name}', N'{dataFilePath}', N'{logFilePath}';
+            ALTER DATABASE [{sourceMeta.Name}] SET MULTI_USER;
+        ";
+        cmd.ExecuteNonQuery();
+
+        _snapshotPaths[snapshotKey] = cloneDataFilePath;
     }
 
     /// <inheritdoc />
@@ -150,29 +176,36 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
         _snapshotRestoredDatabases.Add(dbName);
 
         // Drop if a database with this name already exists
-        DropByName(dbName);
+        //DropByName(dbName);
 
         using var connection = new SqlConnection(_settings.SQLServerMasterConnectionString);
         connection.Open();
 
-        // Get logical file names from the backup
-        var (dataLogicalName, logLogicalName) = GetLogicalFileNames(connection, backupPath);
-
         // Get default data/log directories from the server
         var (defaultDataPath, defaultLogPath) = GetDefaultPaths(connection);
 
-        // RESTORE DATABASE cannot use SQL parameters for identifiers or file paths.
-        var escapedBackupPath = backupPath.Replace("'", "''");
         var dataFilePath = Path.Combine(defaultDataPath, $"{dbName}.mdf").Replace("'", "''");
         var logFilePath = Path.Combine(defaultLogPath, $"{dbName}_log.ldf").Replace("'", "''");
 
+        // RESTORE DATABASE cannot use SQL parameters for identifiers or file paths.
+        var escapedBackupPath = backupPath.Replace("'", "''");
+        var cloneDataFilePath = escapedBackupPath;
+        var cloneLogFilePath = escapedBackupPath.Replace(".mdf", "_log.ldf");
+
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $@"
-            RESTORE DATABASE {LocalDb.QuotedName(dbName)}
-            FROM DISK = N'{escapedBackupPath}'
-            WITH MOVE N'{dataLogicalName.Replace("'", "''")}' TO N'{dataFilePath}',
-                 MOVE N'{logLogicalName.Replace("'", "''")}' TO N'{logFilePath}',
-                 REPLACE";
+            ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+            exec sp_detach_db N'{dbName}', @skipchecks = TRUE
+        ";
+        cmd.ExecuteNonQuery();
+
+        File.Copy(cloneDataFilePath, dataFilePath, true);
+        File.Copy(cloneLogFilePath, logFilePath, true);
+
+        cmd.CommandText = $@"
+            exec sp_attach_db N'{dbName}', N'{dataFilePath}', N'{logFilePath}';
+            ALTER DATABASE [{dbName}] SET MULTI_USER;
+        ";
         cmd.ExecuteNonQuery();
 
         return meta;
