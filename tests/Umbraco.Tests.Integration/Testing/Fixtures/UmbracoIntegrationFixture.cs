@@ -40,7 +40,7 @@ public abstract class UmbracoIntegrationFixture : UmbracoIntegrationFixtureBase
 {
     private IHost _host;
 
-    protected IServiceProvider Services => _host.Services;
+    protected virtual IServiceProvider Services => _host.Services;
 
     /// <summary>
     ///     Gets the <see cref="IScopeProvider" />
@@ -103,7 +103,7 @@ public abstract class UmbracoIntegrationFixture : UmbracoIntegrationFixtureBase
 
         if (TestOptions.Boot)
         {
-            Services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            _host.Services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
         }
     }
 

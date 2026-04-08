@@ -1,8 +1,12 @@
-﻿using NUnit.Framework;
+using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
+using IScopeProvider = Umbraco.Cms.Infrastructure.Scoping.IScopeProvider;
 
 namespace Umbraco.Cms.Tests.Integration.Umbraco.Infrastructure.Services;
 
@@ -249,6 +253,8 @@ public partial class ContentEditingServiceTests
         var result = await ContentEditingService.CopyAsync(child.Key, root.Key, true, false, Constants.Security.SuperUserKey);
         Assert.IsTrue(result.Success);
         Assert.AreEqual(ContentEditingOperationStatus.Success, result.Status);
+
+        PublishNotificiations();
 
         var relationService = GetRequiredService<IRelationService>();
         var relations = relationService.GetByParentId(child.Id)!.ToArray();

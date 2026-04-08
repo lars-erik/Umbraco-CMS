@@ -178,8 +178,8 @@ public class TestDatabaseSwapper
         }
 
         // Synchronize per seed key so only one thread seeds and snapshots
-        var seedLock = _seedLocks.GetOrAdd(seedProfile.SeedKey, _ => new SemaphoreSlim(1, 1));
-        await seedLock.WaitAsync();
+        //var seedLock = _seedLocks.GetOrAdd(seedProfile.SeedKey, _ => new SemaphoreSlim(1, 1));
+        //await seedLock.WaitAsync();
         try
         {
             // Detach current database
@@ -191,8 +191,10 @@ public class TestDatabaseSwapper
 
             if (snapshotDb.HasSnapshot(seedProfile.SeedKey))
             {
+                _currentDatabaseInformation = ((BaseTestDatabase)_dbInstance).TestDatabases.First();
+
                 // Restore from existing snapshot
-                _currentDatabaseInformation = snapshotDb.AttachFromSnapshot(seedProfile.SeedKey);
+                //currentDatabaseInformation = snapshotDb.AttachFromSnapshot(seedProfile.SeedKey, "UmbracoTests-1");
             }
             else
             {
@@ -222,7 +224,7 @@ public class TestDatabaseSwapper
         }
         finally
         {
-            seedLock.Release();
+            //seedLock.Release();
         }
 
         // Mutate connection strings for the (possibly snapshot-restored) database

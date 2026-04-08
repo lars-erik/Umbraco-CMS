@@ -22,6 +22,8 @@ public abstract class BaseTestDatabase
 
     public static BaseTestDatabase Instance { get; private set; }
 
+    public IList<TestDatabaseInformation> TestDatabases => _testDatabases;
+
     public static bool IsSqlite() => Instance is SqliteTestDatabase;
 
     public static bool IsSqlServer() => Instance is SqlServerBaseTestDatabase;
@@ -30,6 +32,9 @@ public abstract class BaseTestDatabase
 
     public virtual TestDatabaseInformation AttachEmpty()
     {
+        Initialize();
+        return _testDatabases.First();
+
         if (_prepareQueue == null)
         {
             Initialize();
@@ -40,29 +45,33 @@ public abstract class BaseTestDatabase
 
     public virtual TestDatabaseInformation AttachSchema()
     {
+        Initialize();
+        return _testDatabases.First();
         if (_prepareQueue == null)
         {
             Initialize();
         }
 
-        return _readySchemaQueue.Take();
+        //_readySchemaQueue.Take();
     }
 
-    public virtual void Detach(TestDatabaseInformation meta) => _prepareQueue.TryAdd(meta);
+    public virtual void Detach(TestDatabaseInformation meta) { } // => _prepareQueue.TryAdd(meta);
 
-    protected virtual void PrepareDatabase() =>
-        Retry(10, () =>
-        {
-            while (_prepareQueue.IsCompleted == false)
-            {
+    protected virtual void PrepareDatabase() {
+        //Retry(10, () =>
+        //{
+            //while (_prepareQueue.IsCompleted == false)
+            //{
                 TestDatabaseInformation meta;
                 try
                 {
-                    meta = _prepareQueue.Take();
+                    meta = _testDatabases.First();
+                    //_prepareQueue.Take();
                 }
                 catch (InvalidOperationException)
                 {
-                    continue;
+                    throw;
+                    //continue;
                 }
 
                 ResetTestDatabase(meta);
@@ -78,14 +87,15 @@ public abstract class BaseTestDatabase
                         }
                     }
 
-                    _readySchemaQueue.TryAdd(meta);
+                    //_readySchemaQueue.TryAdd(meta);
                 }
                 else
                 {
-                    _readyEmptyQueue.TryAdd(meta);
+                    //_readyEmptyQueue.TryAdd(meta);
                 }
-            }
-        });
+        //}
+        //});
+    }
 
     protected static void AddParameter(IDbCommand cmd, UmbracoDatabase.ParameterInfo parameterInfo)
     {
@@ -105,6 +115,9 @@ public abstract class BaseTestDatabase
 
     protected static void Retry(int maxIterations, Action action)
     {
+        action();
+        return;
+
         for (var i = 0; i < maxIterations; i++)
         {
             try

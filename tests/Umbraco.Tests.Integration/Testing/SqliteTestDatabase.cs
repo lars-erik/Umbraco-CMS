@@ -58,7 +58,7 @@ public class SqliteTestDatabase : BaseTestDatabase, ITestDatabase, ISnapshotable
         _readySchemaQueue = new BlockingCollection<TestDatabaseInformation>();
         _readyEmptyQueue = new BlockingCollection<TestDatabaseInformation>();
 
-        foreach (var meta in _testDatabases)
+        foreach (var meta in TestDatabases)
         {
             _prepareQueue.Add(meta);
         }
@@ -157,7 +157,8 @@ public class SqliteTestDatabase : BaseTestDatabase, ITestDatabase, ISnapshotable
     }
 
     /// <inheritdoc />
-    public TestDatabaseInformation AttachFromSnapshot(string snapshotKey)
+    public TestDatabaseInformation AttachFromSnapshot(string snapshotKey,
+        string databaseName)
     {
         if (!_snapshotPaths.TryGetValue(snapshotKey, out var filePath))
         {

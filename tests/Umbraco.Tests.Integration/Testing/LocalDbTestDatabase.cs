@@ -69,10 +69,10 @@ public class LocalDbTestDatabase : SqlServerBaseTestDatabase, ITestDatabase
         _readySchemaQueue = new BlockingCollection<TestDatabaseInformation>();
         _readyEmptyQueue = new BlockingCollection<TestDatabaseInformation>();
 
-        for (var i = 0; i < _testDatabases.Count; i++)
+        for (var i = 0; i < TestDatabases.Count; i++)
         {
-            var meta = _testDatabases[i];
-            var isLast = i == _testDatabases.Count - 1;
+            var meta = TestDatabases[i];
+            var isLast = i == TestDatabases.Count - 1;
 
             _localDb.CopyDatabaseFiles(tempName, s_filesPath, meta.Name, overwrite: true, delete: isLast);
             meta.ConnectionString = s_localDbInstance.GetAttachedConnectionString(meta.Name, s_filesPath);

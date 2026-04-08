@@ -10,6 +10,7 @@ using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.ContentEditing;
+using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Tests.Common.Builders;
 using Umbraco.Cms.Tests.Common.Builders.Extensions;
@@ -28,8 +29,11 @@ namespace Umbraco.Cms.Tests.Integration.Umbraco.Infrastructure.Services;
 public abstract class ContentEditingServiceSnapshotTestBase
 {
     private ServiceTestsSetUpFixture Fixture => ServiceTestsSetUpFixture.Instance;
+    private ICoreScope _coreScope = null!;
+    private IServiceScope _serviceScope = null!;
+    private IServiceProvider? _serviceProvider;
 
-    protected IServiceProvider Services => Fixture.SharedServices;
+    protected IServiceProvider Services => _serviceProvider ?? Fixture.SharedServices;
 
     protected T GetRequiredService<T>() => Services.GetRequiredService<T>();
 
@@ -67,23 +71,34 @@ public abstract class ContentEditingServiceSnapshotTestBase
 
     protected ContentType ContentType { get; private set; }
 
+    private bool _isFirst = true;
+
+    private IServiceProvider _outerProvider = null!;
+
     [SetUp]
     public virtual async Task SetUp()
     {
-        // Swap to a seeded database per test (snapshot-aware)
         var seedAttr = GetType().GetCustomAttribute<DatabaseSeedProfileAttribute>();
-        if (seedAttr is not null)
+        if (_isFirst)
         {
-            var profile = (ITestDatabaseSeedProfile)Activator.CreateInstance(seedAttr.SeedProfileType)!;
-            await Fixture.SwapToSeededDatabaseAsync(profile);
-        }
-        else
-        {
-            await Fixture.SwapToFreshDatabaseAsync();
+            // Swap to a seeded database per test (snapshot-aware)
+            if (seedAttr is not null)
+            {
+                var profile = (ITestDatabaseSeedProfile)Activator.CreateInstance(seedAttr.SeedProfileType)!;
+                await Fixture.SwapToSeededDatabaseAsync(profile);
+            }
+            else
+            {
+                await Fixture.SwapToFreshDatabaseAsync();
+            }
+
+            _isFirst = false;
         }
 
         // Re-set StaticServiceProvider for obsolete constructors
-        StaticServiceProvider.Instance = Services;
+        var serviceScope = Services.CreateScope();
+        _outerProvider = serviceScope.ServiceProvider;
+        StaticServiceProvider.Instance = _outerProvider;
 
         // Reset ContentSettings to defaults — previous tests may have mutated them
         // and since we share a host, the mutations persist across tests
@@ -96,6 +111,38 @@ public abstract class ContentEditingServiceSnapshotTestBase
         {
             PopulateSeededContent();
         }
+
+        _coreScope = Fixture.SharedServices.GetRequiredService<ICoreScopeProvider>().CreateCoreScope(autoComplete:false, repositoryCacheMode:RepositoryCacheMode.Scoped);
+        _serviceScope = _outerProvider.CreateScope();
+        _serviceProvider = _serviceScope.ServiceProvider;
+
+        StaticServiceProvider.Instance = _serviceProvider;
+    }
+
+    [TearDown]
+    public virtual void TearDown()
+    {
+        _serviceProvider = null;
+        _serviceScope.Dispose();
+        _coreScope.Dispose();
+
+        StaticServiceProvider.Instance = _outerProvider;
+    }
+
+    protected void PublishNotificiations()
+    {
+        _coreScope.Notifications.ScopeExit(true);
+    }
+
+    protected void RecycleScopes()
+    {
+        _serviceProvider = null;
+        _serviceScope.Dispose();
+        _coreScope.Dispose();
+
+        _coreScope = Fixture.SharedServices.GetRequiredService<ICoreScopeProvider>().CreateCoreScope(autoComplete: false, repositoryCacheMode: RepositoryCacheMode.Scoped);
+        _serviceScope = _outerProvider.CreateScope();
+        _serviceProvider = _serviceScope.ServiceProvider;
     }
 
     private void PopulateSeededContent()

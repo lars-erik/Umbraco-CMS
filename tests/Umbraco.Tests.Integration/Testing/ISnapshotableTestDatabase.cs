@@ -24,5 +24,5 @@ public interface ISnapshotableTestDatabase : ITestDatabase
     /// <summary>
     ///     Attaches a new database restored from the named snapshot.
     /// </summary>
-    TestDatabaseInformation AttachFromSnapshot(string snapshotKey);
+    TestDatabaseInformation AttachFromSnapshot(string snapshotKey, string databaseName);
 }

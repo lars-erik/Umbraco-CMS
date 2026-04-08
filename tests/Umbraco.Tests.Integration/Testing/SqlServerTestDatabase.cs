@@ -46,21 +46,24 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 
     protected override void Initialize()
     {
-        _prepareQueue = new BlockingCollection<TestDatabaseInformation>();
-        _readySchemaQueue = new BlockingCollection<TestDatabaseInformation>();
-        _readyEmptyQueue = new BlockingCollection<TestDatabaseInformation>();
+        //_prepareQueue = new BlockingCollection<TestDatabaseInformation>();
+        //_readySchemaQueue = new BlockingCollection<TestDatabaseInformation>();
+        //_readyEmptyQueue = new BlockingCollection<TestDatabaseInformation>();
 
-        foreach (var meta in _testDatabases)
+        foreach (var meta in TestDatabases)
         {
             CreateDatabase(meta);
-            _prepareQueue.Add(meta);
+            PrepareDatabase();
+            //_prepareQueue.Add(meta);
         }
 
+        /*
         for (var i = 0; i < _settings.PrepareThreadCount; i++)
         {
             var thread = new Thread(PrepareDatabase);
             thread.Start();
         }
+        */
     }
 
     private void CreateDatabase(TestDatabaseInformation meta)
@@ -85,24 +88,30 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
         using (var connection = new SqlConnection(_settings.SQLServerMasterConnectionString))
         {
             connection.Open();
-            using (var command = connection.CreateCommand())
+            foreach(var db in new[]{name + "-snapshot", name})
             {
-                SetCommand(command, "select count(1) from sys.databases where name = @0", name);
-                var records = (int)command.ExecuteScalar();
-                if (records == 0)
+                using (var command = connection.CreateCommand())
                 {
-                    return;
+                    SetCommand(command, "select count(1) from sys.databases where name = @0", db);
+                    var records = (int)command.ExecuteScalar();
+                    if (records == 0)
+                    {
+                        continue;
+                    }
+
+                    if (!db.EndsWith("-snapshot"))
+                    {
+                        var sql = $@"
+                                ALTER DATABASE {LocalDb.QuotedName(db)}
+                                SET SINGLE_USER
+                                WITH ROLLBACK IMMEDIATE";
+                        SetCommand(command, sql);
+                        command.ExecuteNonQuery();
+                    }
+
+                    SetCommand(command, $@"DROP DATABASE {LocalDb.QuotedName(db)}");
+                    command.ExecuteNonQuery();
                 }
-
-                var sql = $@"
-                        ALTER DATABASE {LocalDb.QuotedName(name)}
-                        SET SINGLE_USER
-                        WITH ROLLBACK IMMEDIATE";
-                SetCommand(command, sql);
-                command.ExecuteNonQuery();
-
-                SetCommand(command, $@"DROP DATABASE {LocalDb.QuotedName(name)}");
-                command.ExecuteNonQuery();
             }
         }
     }
@@ -116,7 +125,7 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
     public void CreateSnapshot(string snapshotKey, TestDatabaseInformation sourceMeta)
     {
         Directory.CreateDirectory(_snapshotDir);
-        var backupPath = Path.Combine(_snapshotDir, $"{snapshotKey}.bak");
+        var snapshotPath = Path.Combine(_snapshotDir, $"{snapshotKey}.ss");
 
         using var connection = new SqlConnection(_settings.SQLServerMasterConnectionString);
         connection.Open();
@@ -125,35 +134,35 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
         // BACKUP DATABASE cannot use SQL parameters for database name or file path.
         // Names are internally generated (not user input), matching existing DDL patterns.
         cmd.CommandText = $@"
-            BACKUP DATABASE {LocalDb.QuotedName(sourceMeta.Name)}
-            TO DISK = N'{backupPath.Replace("'", "''")}'
-            WITH INIT, COMPRESSION";
+            CREATE DATABASE [{sourceMeta.Name}-snapshot]
+            ON (NAME = [{sourceMeta.Name}], FILENAME = '{snapshotPath}')
+            AS SNAPSHOT OF [{sourceMeta.Name}]";
         cmd.ExecuteNonQuery();
 
-        _snapshotPaths[snapshotKey] = backupPath;
+        _snapshotPaths[snapshotKey] = snapshotPath;
     }
 
     /// <inheritdoc />
-    public TestDatabaseInformation AttachFromSnapshot(string snapshotKey)
+    public TestDatabaseInformation AttachFromSnapshot(string snapshotKey, string databaseName)
     {
         if (!_snapshotPaths.TryGetValue(snapshotKey, out var backupPath))
         {
             throw new InvalidOperationException($"No snapshot found with key '{snapshotKey}'.");
         }
 
-        var dbName = $"{DatabaseName}-Snap-{Interlocked.Increment(ref _snapshotCounter)}";
+        var dbName = databaseName;
         var meta = TestDatabaseInformation.CreateWithMasterConnectionString(dbName, false, _settings.SQLServerMasterConnectionString);
 
         _snapshotRestoredDatabases.Add(dbName);
 
         // Drop if a database with this name already exists
-        DropByName(dbName);
+        //DropByName(dbName);
 
         using var connection = new SqlConnection(_settings.SQLServerMasterConnectionString);
         connection.Open();
 
         // Get logical file names from the backup
-        var (dataLogicalName, logLogicalName) = GetLogicalFileNames(connection, backupPath);
+        //var (dataLogicalName, logLogicalName) = GetLogicalFileNames(connection, backupPath);
 
         // Get default data/log directories from the server
         var (defaultDataPath, defaultLogPath) = GetDefaultPaths(connection);
@@ -165,11 +174,9 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $@"
-            RESTORE DATABASE {LocalDb.QuotedName(dbName)}
-            FROM DISK = N'{escapedBackupPath}'
-            WITH MOVE N'{dataLogicalName.Replace("'", "''")}' TO N'{dataFilePath}',
-                 MOVE N'{logLogicalName.Replace("'", "''")}' TO N'{logFilePath}',
-                 REPLACE";
+            ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+            RESTORE DATABASE [{dbName}] FROM DATABASE_SNAPSHOT = '{dbName}-snapshot';
+            ALTER DATABASE [{dbName}] SET MULTI_USER;";
         cmd.ExecuteNonQuery();
 
         return meta;
@@ -219,6 +226,7 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 
     public override void TearDown()
     {
+        /*
         if (_prepareQueue == null)
         {
             return;
@@ -241,7 +249,7 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 
         // Drop pool databases
         Parallel.ForEach(_testDatabases, Drop);
-
+        */
         // Drop snapshot-restored databases
         foreach (var name in _snapshotRestoredDatabases)
         {
