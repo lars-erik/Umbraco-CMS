@@ -20,7 +20,6 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
 {
     public const string DatabaseName = "UmbracoTests";
     private readonly TestDatabaseSettings _settings;
-    private readonly string _snapshotDir;
     private readonly ConcurrentDictionary<string, string> _snapshotPaths = new();
     private readonly ConcurrentBag<string> _snapshotRestoredDatabases = new();
     private int _snapshotCounter;
@@ -31,7 +30,6 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
         _databaseFactory = databaseFactory ?? throw new ArgumentNullException(nameof(databaseFactory));
 
         _settings = settings;
-        _snapshotDir = Path.Combine(settings.FilesPath, "snapshots");
 
         var counter = 0;
 
@@ -118,9 +116,6 @@ public class SqlServerTestDatabase : SqlServerBaseTestDatabase, ITestDatabase, I
     /// <inheritdoc />
     public void CreateSnapshot(string snapshotKey, TestDatabaseInformation sourceMeta)
     {
-        Directory.CreateDirectory(_snapshotDir);
-        var backupPath = Path.Combine(_snapshotDir, $"{snapshotKey}.bak");
-
         using var connection = new SqlConnection(_settings.SQLServerMasterConnectionString);
         connection.Open();
 
