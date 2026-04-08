@@ -2,7 +2,9 @@
 // See LICENSE for more details.
 
 using System;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using NUnit.Framework;
 using Umbraco.Cms.Persistence.SqlServer;
 
 namespace Umbraco.Cms.Tests.Integration.Testing;
@@ -74,5 +76,65 @@ public static class TestDatabaseFactory
     }
 
     private static ITestDatabase CreateSqlServer(TestDatabaseSettings settings, ILoggerFactory loggerFactory, TestUmbracoDatabaseFactoryProvider dbFactory) =>
-        new SqlServerTestDatabase(settings, loggerFactory, dbFactory.Create());
+        //new LoggingSnapshotableTestDatabase(
+        new SqlServerTestDatabase(settings, loggerFactory, dbFactory.Create())
+        //)
+        ;
+}
+
+internal class LoggingSnapshotableTestDatabase : ISnapshotableTestDatabase
+{
+    private readonly ISnapshotableTestDatabase _innerDb;
+    private readonly Stopwatch _stopwatch = new();
+
+    public LoggingSnapshotableTestDatabase(ISnapshotableTestDatabase innerDb)
+    {
+        _innerDb = innerDb;
+    }
+
+    public TestDatabaseInformation AttachEmpty()
+    {
+        _stopwatch.Restart();
+        var result = _innerDb.AttachEmpty();
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} attached empty db {result.Name} in {_stopwatch.Elapsed}");
+        return result;
+    }
+
+    public TestDatabaseInformation AttachSchema()
+    {
+        _stopwatch.Restart();
+        var result = _innerDb.AttachSchema();
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} attached schema db {result.Name} in {_stopwatch.Elapsed}");
+        return result;
+    }
+
+    public void Detach(TestDatabaseInformation id)
+    {
+        _stopwatch.Restart();
+        _innerDb.Detach(id);
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} detached schema db {id.Name} in {_stopwatch.Elapsed}");
+    }
+
+    public bool HasSnapshot(string snapshotKey)
+    {
+        _stopwatch.Restart();
+        var result = _innerDb.HasSnapshot(snapshotKey);
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} {(result ? "found" : "did not find")} snapshot {snapshotKey} in {_stopwatch.Elapsed}");
+        return result;
+    }
+
+    public void CreateSnapshot(string snapshotKey, TestDatabaseInformation sourceMeta)
+    {
+        _stopwatch.Restart();
+        _innerDb.CreateSnapshot(snapshotKey, sourceMeta);
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} created snapshot {snapshotKey} from {sourceMeta.Name} in {_stopwatch.Elapsed}");
+    }
+
+    public TestDatabaseInformation AttachFromSnapshot(string snapshotKey)
+    {
+        _stopwatch.Restart();
+        var result = _innerDb.AttachFromSnapshot(snapshotKey);
+        TestContext.Progress.WriteLine($"{_innerDb.GetType()} attached db {result.Name} from snapshot {snapshotKey} in {_stopwatch.Elapsed}");
+        return result;
+    }
 }
